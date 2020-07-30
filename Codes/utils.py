@@ -2,15 +2,18 @@ import sys, os
 import random
 import torch
 from torch.utils.data import Dataset, DataLoader
-from skimage import io
+# from skimage import io
+from torchvision import transforms
+from PIL import Image
 import numpy as np
+from pathlib import Path
 
 import pdb
 
 class DataManager(object):
     def __init__(self, bg_dir, eval_dir, seed):
-        self.bg_dir = bg_dir
-        self.eval_dir = eval_dir
+        self.bg_dir = Path(bg_dir)
+        self.eval_dir = Path(eval_dir)
         self.seed = seed
 
         self.bg_paths = self.load_path(self.bg_dir)
@@ -75,15 +78,17 @@ class VerificationDataset(Dataset):
         self.sample_size = sample_size
         self.data_pairs = self.sample_pairs()
         self.pair_statistics()
+        self.trans = transforms.ToTensor()
     
     def __len__(self):
         return len(self.data_pairs)
     
     def __getitem__(self, idx):
         pair = self.data_pairs[idx]
-        images = [io.imread(p) for p in pair[:2]]
+        # images = [io.imread(p) for p in pair[:2]]
+        images = [self.trans(Image.open(p)) for p in pair[:2]]
         label = torch.from_numpy(np.array([int(pair[-1])], dtype=np.float32))
-        return images, label
+        return images[0], images[1], label
     
     def generate_pairs(self, total_examples):
         # Training example(alphabet pair) generator
@@ -154,9 +159,12 @@ class VerificationDataset(Dataset):
         same_cnt = 0
 
         for item in self.data_pairs:
-            x_alp = item[0].split('\\')[0].split('/')[-1]
+            
+            # x_alp = item[0].split('\\')[0].split('/')[-1]
+            x_alp = Path(item[0]).parent.parent.name
             alp_cnts[x_alp] += 1
-            y_alp = item[1].split('\\')[0].split('/')[-1]
+            # y_alp = item[1].split('\\')[0].split('/')[-1]
+            y_alp = Path(item[1]).parent.parent.name
             alp_cnts[y_alp] += 1
             if item[2]:
                 same_cnt += 1
@@ -173,6 +181,7 @@ class OneshotDataset(Dataset):
         self.path_dict = path_dict
         self.n_way = n_way
         self.data = self.make_trials()
+        self.trans = transforms.ToTensor()
     
     def make_trials(self):
         res = []
@@ -196,8 +205,10 @@ class OneshotDataset(Dataset):
     def __getitem__(self, idx):
         trial = self.data[idx]
 
-        a_image = io.imread(trial[0])
-        b_images = [io.imread(b) for b in trial[1]]
+        # a_image = io.imread(trial[0])
+        a_image = self.trans(Image.open(trial[0]))
+        # b_images = [io.imread(b) for b in trial[1]]
+        b_images = [self.trans(Image.open(b)) for b in trial[1]]
         label = torch.from_numpy(np.array([trial[2]], dtype=np.float32))
         
         return a_image, b_images, label
@@ -215,8 +226,8 @@ if __name__ == "__main__":
     seed = 10
     dm = DataManager(bg_dir = bg_dir, eval_dir = eval_dir, seed = seed)
 
-    # train_vd = VerificationDataset(path_dict = dm.bg_paths, drawers = dm.train_drawers, sample_size = 150000)
-    # print("EXAMPLE:")
-    # print(train_vd[0])
+    train_vd = VerificationDataset(path_dict = dm.bg_paths, drawers = dm.train_drawers, sample_size = 30000)
+    print("EXAMPLE:")
+    print(train_vd[0])
 
     od = OneshotDataset(path_dict = dm.eval_paths, n_way = 20)
