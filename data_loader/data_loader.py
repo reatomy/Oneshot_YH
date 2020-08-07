@@ -11,10 +11,11 @@ from pathlib import Path
 import pdb
 
 class DataManager(object):
-    def __init__(self, bg_dir, eval_dir, seed):
+    def __init__(self, bg_dir, eval_dir, seed, train_sample_size = 30000):
         self.bg_dir = Path(bg_dir)
         self.eval_dir = Path(eval_dir)
         self.seed = seed
+        self.train_sample_size = train_sample_size
 
         self.bg_paths = self.load_path(self.bg_dir)
         print("ALPHABET IN BACKGROUND", ":", len(list(self.bg_paths.keys())))
@@ -30,6 +31,10 @@ class DataManager(object):
 
 
         self.sample_drawers()
+
+        self.verification_dataset = VerificationDataset(path_dict = self.bg_paths, drawers = self.train_drawers, sample_size=self.train_sample_size)
+        self.validation_dataset = OneshotDataset(path_dict = self.valid_paths, drawers = self.valid_drawers, n_way = 20)
+        self.evaluation_dataset = OneshotDataset(path_dict = self.eval_paths, drawers = self.test_drawers, n_way = 20)
 
     def load_path(self, _dirpath):
         path_dict = {}
@@ -245,10 +250,10 @@ class OneshotDataset(Dataset):
         for alp in self.path_dict.keys():
             for trial_cnt in range(2):
                 chars = random.sample(list(self.path_dict[alp].keys()), self.n_way)
-                drawers = random.sample(range(20), 2)
+                t_drawers = random.sample(self.drawers, 2)
 
-                a_images = [self.path_dict[alp][c][drawers[0]] for c in chars]
-                b_images = [self.path_dict[alp][c][drawers[1]] for c in chars]
+                a_images = [self.path_dict[alp][c][int(t_drawers[0])-1] for c in chars]
+                b_images = [self.path_dict[alp][c][int(t_drawers[1])-1] for c in chars]
 
                 for a_idx, a_image in enumerate(a_images):
                     res.append((a_image, b_images, a_idx))
@@ -306,8 +311,9 @@ if __name__ == "__main__":
     seed = 10
     dm = DataManager(bg_dir = bg_dir, eval_dir = eval_dir, seed = seed)
 
-    train_vd = VerificationDataset(path_dict = dm.bg_paths, drawers = dm.train_drawers, sample_size = 30000)
-    print(train_vd[:2])
+    # train_vd = VerificationDataset(path_dict = dm.bg_paths, drawers = dm.train_drawers, sample_size = 30000)
+    # v_dl = DataLoader(train_vd, batch_size=4, shuffle=True, num_workers=4)
 
-    od = OneshotDataset(path_dict = dm.eval_paths, drawers = dm.test_drawers, n_way = 20)
+    # od = OneshotDataset(path_dict = dm.eval_paths, drawers = dm.test_drawers, n_way = 20)
+    # o_dl = DataLoader(od, batch_size=4, shuffle=True, num_workers=4)
     # print(od[:2])
