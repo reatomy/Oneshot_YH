@@ -11,11 +11,12 @@ from pathlib import Path
 import pdb
 
 class DataManager(object):
-    def __init__(self, bg_dir, eval_dir, seed, train_sample_size = 30000):
+    def __init__(self, bg_dir, eval_dir, seed, n_way = 20, train_sample_size = 30000):
         self.bg_dir = Path(bg_dir)
         self.eval_dir = Path(eval_dir)
         self.seed = seed
         self.train_sample_size = train_sample_size
+        self.n_way = n_way
 
         self.bg_paths = self.load_path(self.bg_dir)
         print("ALPHABET IN BACKGROUND", ":", len(list(self.bg_paths.keys())))
@@ -33,8 +34,8 @@ class DataManager(object):
         self.sample_drawers()
 
         self.verification_dataset = VerificationDataset(path_dict = self.bg_paths, drawers = self.train_drawers, sample_size=self.train_sample_size)
-        self.validation_dataset = OneshotDataset(path_dict = self.valid_paths, drawers = self.valid_drawers, n_way = 20)
-        self.evaluation_dataset = OneshotDataset(path_dict = self.eval_paths, drawers = self.test_drawers, n_way = 20)
+        self.validation_dataset = OneshotDataset(path_dict = self.valid_paths, drawers = self.valid_drawers, n_way = self.n_way)
+        self.evaluation_dataset = OneshotDataset(path_dict = self.eval_paths, drawers = self.test_drawers, n_way = self.n_way)
 
     def load_path(self, _dirpath):
         path_dict = {}
