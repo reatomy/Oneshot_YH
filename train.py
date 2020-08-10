@@ -29,7 +29,6 @@ config = parser.parse_args()
 
 os.makedirs(config.result_dir, exist_ok=True)
 os.environ["CUDA_VISIBLE_DEVICES"] = config.device
-config.device = torch.device("cuda", int(config.device))
 
 def main(config):
     dm = DataManager(bg_dir = config.background_dir, eval_dir = config.evaluation_dir, seed = config.seed)
@@ -54,8 +53,13 @@ def do(train_dl, config):
         total = 0.0
 
         for it, batch_data in enumerate(train_dl):
-            batch_data = tuple(t.to(config.device) for t in batch_data)
             batch_img1, batch_img2, batch_label = batch_data
+
+            if len(config.device) > 0:
+                model = model.cuda()
+                batch_img1 = batch_img1.cuda()
+                batch_img2 = batch_img2.cuda()
+                batch_label = batch_label.cuda()
             
             optimizer.zero_grad()
             model.batch_size = len(batch_img1)
