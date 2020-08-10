@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--device", type=str, default="")
 parser.add_argument("--result_dir", type=str, default="results/")
 parser.add_argument("--model_path", type=str, default="results/model.pt")
-parser.add_argument("--log_step", type=int, default=100)
+parser.add_argument("--log_step", type=int, default=50)
 
 # Training parameters
 parser.add_argument("--num_epoch", type=int, default=200)
@@ -53,8 +53,8 @@ def do(train_dl, valid_dl, config):
     for ep in range(config.num_epoch):
         model.train()
 
-        total_loss = 0.0
-        total = 0.0
+        total _loss = 0.0
+        batch_acc = 0.0
 
         for it, batch_data in enumerate(train_dl):
             batch_img1, batch_img2, batch_label = batch_data
@@ -80,9 +80,10 @@ def do(train_dl, valid_dl, config):
             if (it % config.log_step) == (config.log_step - 1):
                 print(" ")
                 print("[EPOCH %d , iteration %5d] LOSS: %.5f" % (ep + 1, it + 1, total_loss / config.log_step))
-                valid_score = eval(valid_dl, config)
-                print("\tVALIDATION ACCURACY: %.5f" % valid_score)
                 total_loss = 0.0
+        
+        valid_score = eval(valid_dl, config)
+        print("[EPOCH %d] - VALIDATION ACCURACY: %.5f" % (ep + 1, valid_score))
 
             
 
