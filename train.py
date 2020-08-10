@@ -11,6 +11,7 @@ from data_loader.data_loader import DataManager
 parser = argparse.ArgumentParser()
 parser.add_argument("--device", type=str, default="")
 parser.add_argument("--result_dir", type=str, default="results/")
+parser.add_argument("--log_step", type=int, default=10)
 
 # Training parameters
 parser.add_argument("--num_epoch", type=int, default=200)
@@ -28,6 +29,7 @@ config = parser.parse_args()
 
 os.makedirs(config.result_dir, exist_ok=True)
 os.environ["CUDA_VISIBLE_DEVICES"] = config.device
+config.device = torch.device("cuda", config.device)
 
 def main(config):
     dm = DataManager(bg_dir = config.background_dir, eval_dir = config.evaluation_dir, seed = config.seed)
@@ -52,6 +54,7 @@ def do(train_dl, config):
         total = 0.0
 
         for it, batch_data in enumerate(train_dl):
+            batch_data = tuple(t.to(config.device) for t in batch_data)
             batch_img1, batch_img2, batch_label = batch_data
             
             optimizer.zero_grad()
@@ -63,6 +66,11 @@ def do(train_dl, config):
 
             loss.backward()
             optimizer.step()
+
+            if (it % config.log_step) == (config.log_step - 1):
+                print(" ")
+                print("[EPOCH %d , iteration %5d] LOSS: %.5f" % (ep + 1, it + 1, total_loss / config.log_step))
+                total_loss = 0.0
 
             
 
