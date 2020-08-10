@@ -53,7 +53,7 @@ def do(train_dl, valid_dl, config):
     for ep in range(config.num_epoch):
         model.train()
 
-        total _loss = 0.0
+        total_loss = 0.0
         batch_acc = 0.0
 
         for it, batch_data in enumerate(train_dl):
