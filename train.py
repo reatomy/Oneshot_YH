@@ -78,32 +78,50 @@ def do(train_dl, valid_dl, config):
             if (it % config.log_step) == (config.log_step - 1):
                 print(" ")
                 print("[EPOCH %d , iteration %5d] LOSS: %.5f" % (ep + 1, it + 1, total_loss / config.log_step))
+                valid_score = eval(valid_dl, config)
+                print("\tVALIDATION ACCURACY: %.5f" % valid_score)
                 total_loss = 0.0
         
             torch.save(model.state_dict(), config.model_path)
 
-            eval(valid_dl, config)
+            
 
 def eval(test_dl, config):
-    print("EVALUATION")
-
     model = SiameseConvNet()
     model.load_state_dict(torch.load(config.model_path))
     model.eval()
 
-    eval_loss = 0.0
+    corr_cnt = torch.tensor(0, dtype=torch.int64)
 
     for it, batch_data in enumerate(test_dl):
         batch_img1, batch_img2_list, batch_label = batch_data
+        scores = torch.tensor([], dtype=torch.float32)
 
         if len(config.device) > 0:
+            model = model.cuda()
             batch_img1 = batch_img1.cuda()
             batch_img2_list = [i.cuda() for i in batch_img2_list]
             batch_label = batch_label.cuda()
+            scores = scores.cuda()
         
         for way_idx in range(config.n_way):
             out = model(batch_img1, batch_img2_list[way_idx])
-            pdb.set_trace()
+            scores = torch.cat((scores, out), dim=1)
+        
+        pred = scores.argmax(dim=1).type(batch_label.dtype)
+        mat = torch.sum(torch.eq(pred, batch_label.view(batch_label.shape[0])))
+        corr_cnt += mat
+    
+    acc = int(mat) / len(test_dl)
+
+    return acc
+        
+
+        
+        
+        
+
+            
 
 
 
