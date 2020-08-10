@@ -74,6 +74,8 @@ def do(train_dl, valid_dl, config):
 
             loss.backward()
             optimizer.step()
+        
+            torch.save(model.state_dict(), config.model_path)
 
             if (it % config.log_step) == (config.log_step - 1):
                 print(" ")
@@ -81,11 +83,6 @@ def do(train_dl, valid_dl, config):
                 valid_score = eval(valid_dl, config)
                 print("\tVALIDATION ACCURACY: %.5f" % valid_score)
                 total_loss = 0.0
-        
-            torch.save(model.state_dict(), config.model_path)
-            valid_score = eval(valid_dl, config)
-            print(valid_score)
-            pdb.set_trace()
 
             
 
