@@ -83,6 +83,9 @@ def do(train_dl, valid_dl, config):
                 total_loss = 0.0
         
             torch.save(model.state_dict(), config.model_path)
+            valid_score = eval(valid_dl, config)
+            print(valid_score)
+            pdb.set_trace()
 
             
 
@@ -101,11 +104,10 @@ def eval(test_dl, config):
             model = model.cuda()
             batch_img1 = batch_img1.cuda()
             batch_img2_list = [i.cuda() for i in batch_img2_list]
-            batch_label = batch_label.cuda()
-            scores = scores.cuda()
         
         for way_idx in range(config.n_way):
             out = model(batch_img1, batch_img2_list[way_idx])
+            out = out.cpu()
             scores = torch.cat((scores, out), dim=1)
         
         pred = scores.argmax(dim=1).type(batch_label.dtype)
