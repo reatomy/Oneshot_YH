@@ -29,7 +29,7 @@ config = parser.parse_args()
 
 os.makedirs(config.result_dir, exist_ok=True)
 os.environ["CUDA_VISIBLE_DEVICES"] = config.device
-config.device = torch.device("cuda", config.device)
+config.device = torch.device("cuda", int(config.device))
 
 def main(config):
     dm = DataManager(bg_dir = config.background_dir, eval_dir = config.evaluation_dir, seed = config.seed)
