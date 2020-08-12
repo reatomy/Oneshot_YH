@@ -53,10 +53,11 @@ def do(train_dl, valid_dl, config):
     for ep in range(config.num_epoch):
         model.train()
 
-        total_loss = 0.0
-        batch_acc = 0.0
+        ep_loss = 0.0
+        log_step_loss = 0.0
 
         for it, batch_data in enumerate(train_dl):
+            
             batch_img1, batch_img2, batch_label = batch_data
 
             if len(config.device) > 0:
@@ -70,7 +71,8 @@ def do(train_dl, valid_dl, config):
             out = model(batch_img1, batch_img2)
 
             loss = loss_function(out, batch_label)
-            total_loss += loss.item()
+            log_step_loss += loss.item()
+            ep_loss += loss.item()
 
             loss.backward()
             optimizer.step()
@@ -79,18 +81,19 @@ def do(train_dl, valid_dl, config):
 
             if (it % config.log_step) == (config.log_step - 1):
                 print(" ")
-                print("[EPOCH %d , iteration %5d] LOSS: %.5f" % (ep + 1, it + 1, total_loss / config.log_step))
-                total_loss = 0.0
-        
-        valid_score = eval(valid_dl, config)
+                print("[EPOCH %d , iteration %5d] LOSS: %.5f" % (ep + 1, it + 1, log_step_loss / config.log_step))
+                log_step_loss = 0.0
+                
+        valid_score = eval(valid_dl, config, model = model)
         print("[EPOCH %d] - VALIDATION ACCURACY: %.5f" % (ep + 1, valid_score))
 
             
 
-def eval(test_dl, config):
-    model = SiameseConvNet()
-    model.load_state_dict(torch.load(config.model_path))
-    model.eval()
+def eval(test_dl, config, model = None):
+    if model is None:
+        model = SiameseConvNet()
+        model.load_state_dict(torch.load(config.model_path))
+        model.eval()
 
     corr_cnt = torch.tensor(0, dtype=torch.int64)
 
