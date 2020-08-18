@@ -81,10 +81,12 @@ def do(train_dl, valid_dl, config):
                 print(" ")
                 print("[EPOCH %d , iteration %5d] BATCH LOSS: %.5f" % (ep + 1, it + 1, log_step_loss / config.log_step))
                 log_step_loss = 0.0
-
+        
+        ep_loss = ep_loss / len(train_dl)
         torch.save(model.state_dict(), config.model_path)
         valid_score, valid_loss = eval(valid_dl, config, model = model)
-        print("[EPOCH %d] - VALIDATION ACCURACY: %.5f at LOSS:" % (ep + 1, valid_score, valid_loss))
+        print("[EPOCH %d] - TRAINING LOSS: %.5f" % (ep + 1, ep_loss))
+        print("\tVALIDATION ACCURACY: %.5f at LOSS: %.5f" % (valid_score, valid_loss))
 
 def eval(test_dl, config, model = None):
     if model is None:
