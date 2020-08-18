@@ -83,8 +83,8 @@ def do(train_dl, valid_dl, config):
                 log_step_loss = 0.0
 
         torch.save(model.state_dict(), config.model_path)
-        valid_score = eval(valid_dl, config, model = model)
-        print("[EPOCH %d] - VALIDATION ACCURACY: %.5f" % (ep + 1, valid_score))
+        valid_score, valid_loss = eval(valid_dl, config, model = model)
+        print("[EPOCH %d] - VALIDATION ACCURACY: %.5f at LOSS:" % (ep + 1, valid_score, valid_loss))
 
 def eval(test_dl, config, model = None):
     if model is None:
@@ -93,6 +93,9 @@ def eval(test_dl, config, model = None):
     
     model.eval()
     corr_cnt = torch.tensor(0, dtype=torch.int64)
+
+    eval_loss_function = nn.CrossEntropyLoss()
+    eval_loss = 0.0
 
     for it, batch_data in enumerate(test_dl):
         batch_img1, batch_img2_list, batch_label = batch_data
@@ -109,12 +112,15 @@ def eval(test_dl, config, model = None):
             scores = torch.cat((scores, out), dim=1)
         
         pred = scores.argmax(dim=1).type(batch_label.dtype)
+        batch_loss = eval_loss_function(pred, batch_label.view(batch_label.shape[0]))
+        eval_loss += batch_loss.item()
         mat = torch.sum(torch.eq(pred, batch_label.view(batch_label.shape[0])))
         corr_cnt += mat
     
+    eval_loss = eval_loss / len(test_dl)
     acc = int(mat) / len(test_dl)
 
-    return acc
+    return acc, eval_loss
         
 
         
