@@ -29,8 +29,8 @@ class SiameseConvNet(nn.Module):
         self.fc1.apply(self.init_weights)
 
         self.fc2 = nn.Sequential(
-            nn.Linear(4096, 1)
-            # nn.Sigmoid()
+            nn.Linear(4096, 1),
+            nn.Sigmoid()
         )
         self.fc2.apply(self.init_weights)
 

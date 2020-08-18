@@ -46,7 +46,7 @@ def do(train_dl, valid_dl, config):
 
     # This loss combines a Sigmoid layer and the BCELoss in one single class. 
     # This version is more numerically stable than using a plain Sigmoid followed by a BCELoss
-    loss_function = nn.BCEWithLogitsLoss()
+    loss_function = nn.BCELoss()
 
     optimizer = torch.optim.SGD(model.parameters(), lr = config.learning_rate, weight_decay = config.reg_penalty, momentum = config.momentum)
 
@@ -70,30 +70,28 @@ def do(train_dl, valid_dl, config):
             model.batch_size = len(batch_img1)
             out = model(batch_img1, batch_img2)
 
-            loss = loss_function(out, batch_label)
-            log_step_loss += loss.item()
-            ep_loss += loss.item()
+            batch_loss = loss_function(out, batch_label)
+            log_step_loss += batch_loss.item()
+            ep_loss += batch_loss.item()
 
-            loss.backward()
+            batch_loss.backward()
             optimizer.step()
-        
-            torch.save(model.state_dict(), config.model_path)
 
             if (it % config.log_step) == (config.log_step - 1):
                 print(" ")
-                print("[EPOCH %d , iteration %5d] LOSS: %.5f" % (ep + 1, it + 1, log_step_loss / config.log_step))
+                print("[EPOCH %d , iteration %5d] BATCH LOSS: %.5f" % (ep + 1, it + 1, log_step_loss / config.log_step))
                 log_step_loss = 0.0
 
+        torch.save(model.state_dict(), config.model_path)
         valid_score = eval(valid_dl, config, model = model)
         print("[EPOCH %d] - VALIDATION ACCURACY: %.5f" % (ep + 1, valid_score))
-
 
 def eval(test_dl, config, model = None):
     if model is None:
         model = SiameseConvNet()
         model.load_state_dict(torch.load(config.model_path))
-        model.eval()
-
+    
+    model.eval()
     corr_cnt = torch.tensor(0, dtype=torch.int64)
 
     for it, batch_data in enumerate(test_dl):
