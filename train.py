@@ -18,7 +18,7 @@ parser.add_argument("--log_step", type=int, default=50)
 parser.add_argument("--num_epoch", type=int, default=200)
 parser.add_argument("--train_batch_size", type=int, default=128)
 parser.add_argument("--eval_batch_size", type=int, default=10)
-parser.add_argument("--learning_rate", type=float, default=1e-3)
+parser.add_argument("--learning_rate", type=float, default=1e-2)
 parser.add_argument("--reg_penalty", type=float, default=1e-2)
 parser.add_argument("--momentum", type=float, default=0.5)
 
@@ -49,6 +49,7 @@ def do(train_dl, valid_dl, config):
     loss_function = nn.BCELoss()
 
     optimizer = torch.optim.SGD(model.parameters(), lr = config.learning_rate, weight_decay = config.reg_penalty, momentum = config.momentum)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.99)
 
     for ep in range(config.num_epoch):
         model.train()
@@ -76,6 +77,7 @@ def do(train_dl, valid_dl, config):
 
             batch_loss.backward()
             optimizer.step()
+            scheduler.step()
 
             if (it % config.log_step) == (config.log_step - 1):
                 print(" ")
