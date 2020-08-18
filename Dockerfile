@@ -5,6 +5,7 @@ FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
 # RUN pip install ~
 
 # 소스 복사
-COPY ./data_loader/data_loader.py /data_loader/
-COPY ./model/models.py /model/
-COPY train.py /
+# work directory: /workspace
+COPY ./data_loader/data_loader.py ./data_loader/
+COPY ./model/models.py ./model/
+COPY train.py ./
