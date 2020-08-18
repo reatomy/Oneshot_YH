@@ -111,8 +111,10 @@ def eval(test_dl, config, model = None):
             out = out.cpu()
             scores = torch.cat((scores, out), dim=1)
         
+        # pdb.set_trace()
         pred = scores.argmax(dim=1).type(batch_label.dtype)
-        batch_loss = eval_loss_function(pred, batch_label.view(batch_label.shape[0]))
+        # batch_loss = eval_loss_function(pred, batch_label.view(batch_label.shape[0]))
+        batch_loss = eval_loss_function(scores, batch_label.view(batch_label.shape[0]).type(torch.long))
         eval_loss += batch_loss.item()
         mat = torch.sum(torch.eq(pred, batch_label.view(batch_label.shape[0])))
         corr_cnt += mat
