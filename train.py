@@ -83,11 +83,10 @@ def do(train_dl, valid_dl, config):
                 print(" ")
                 print("[EPOCH %d , iteration %5d] LOSS: %.5f" % (ep + 1, it + 1, log_step_loss / config.log_step))
                 log_step_loss = 0.0
-                
+
         valid_score = eval(valid_dl, config, model = model)
         print("[EPOCH %d] - VALIDATION ACCURACY: %.5f" % (ep + 1, valid_score))
 
-            
 
 def eval(test_dl, config, model = None):
     if model is None:
