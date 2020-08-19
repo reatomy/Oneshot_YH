@@ -20,7 +20,7 @@ parser.add_argument("--train_batch_size", type=int, default=128)
 parser.add_argument("--eval_batch_size", type=int, default=10)
 parser.add_argument("--learning_rate", type=float, default=1e-2)
 parser.add_argument("--reg_penalty", type=float, default=1e-2)
-parser.add_argument("--momentum", type=float, default=0.5)
+parser.add_argument("--momentum", type=float, default=0.9)
 
 # Dataset parameters
 parser.add_argument("--seed", type=int, default=10)
@@ -53,11 +53,14 @@ def do(train_dl, valid_dl, config):
 
     best_epoch = {'epoch': -1, 'loss': 10000, 'score': 0.0}
 
+    momentum_step = (config.momentum - 0.5) / config.num_epoch
+
     for ep in range(config.num_epoch):
         model.train()
 
         ep_loss = 0.0
         log_step_loss = 0.0
+        optimizer.param_groups[0]['momentum'] += momentum_step
 
         for it, batch_data in enumerate(train_dl):
             
