@@ -51,6 +51,8 @@ def do(train_dl, valid_dl, config):
     optimizer = torch.optim.SGD(model.parameters(), lr = config.learning_rate, weight_decay = config.reg_penalty, momentum = config.momentum)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.99)
 
+    best_epoch = {'epoch': -1, 'loss': 10000, 'score': 0.0}
+
     for ep in range(config.num_epoch):
         model.train()
 
@@ -89,6 +91,16 @@ def do(train_dl, valid_dl, config):
         valid_score, valid_loss = eval(valid_dl, config, model = model)
         print("[EPOCH %d] - TRAINING LOSS: %.5f" % (ep + 1, ep_loss))
         print("\tVALIDATION ACCURACY: %.5f at LOSS: %.5f" % (valid_score, valid_loss))
+        if best_epoch['loss'] > valid_loss:
+            best_epoch['epoch'] = ep
+            best_epoch['loss'] = valid_loss
+            best_epoch['score'] = valid_score
+            print("============BEST EPOCH============")
+            
+        else:
+            if best_epoch['epoch'] + 20 <= ep:
+                print("LOSS DOESN'T DECREASE")
+                break
 
 def eval(test_dl, config, model = None):
     if model is None:
