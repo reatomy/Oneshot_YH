@@ -4,15 +4,18 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import os
 import pdb
+from pathlib import Path
 
-from model.models import SiameseConvNet
+from model.models import SiameseConvNet, SiameseConvNetWithBatchNorm
 from data_loader.data_loader import DataManager
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--device", type=str, default="")
 parser.add_argument("--result_dir", type=str, default="results/")
-parser.add_argument("--model_path", type=str, default="results/model.pt")
+# parser.add_argument("--model_path", type=str, default="results/model.pt")
+parser.add_argument("--model_dir", type=str, default="results/")
 parser.add_argument("--log_step", type=int, default=50)
+parser.add_argument("--model", type=str, default="siamese")
 
 # Training parameters
 parser.add_argument("--num_epoch", type=int, default=200)
@@ -33,16 +36,25 @@ config = parser.parse_args()
 os.makedirs(config.result_dir, exist_ok=True)
 os.environ["CUDA_VISIBLE_DEVICES"] = config.device
 
+config.model_name = config.model + "_model.pt"
+config.model_path = os.path.join(Path(config.model_dir), config.model_name)
+
 def main(config):
     dm = DataManager(bg_dir = config.background_dir, eval_dir = config.evaluation_dir, seed = config.seed, n_way = config.n_way)
     train_dl = DataLoader(dataset = dm.verification_dataset, batch_size = config.train_batch_size)
     valid_dl = DataLoader(dataset = dm.validation_dataset, batch_size = config.eval_batch_size)
 
+    print("MODEL PATH:", config.model_path)
     do(train_dl, valid_dl, config)
 
 def do(train_dl, valid_dl, config):
     print("LEARNING MODEL...")
-    model = SiameseConvNet()
+    if config.model == "siamese":
+        model = SiameseConvNet()
+    elif config.model == "siamese_batchnorm":
+        model = SiameseConvNetWithBatchNorm()
+    else:
+        return
 
     # This loss combines a Sigmoid layer and the BCELoss in one single class. 
     # This version is more numerically stable than using a plain Sigmoid followed by a BCELoss
@@ -60,7 +72,7 @@ def do(train_dl, valid_dl, config):
 
         ep_loss = 0.0
         log_step_loss = 0.0
-        optimizer.param_groups[0]['momentum'] += momentum_step
+        # optimizer.param_groups[0]['momentum'] += momentum_step
 
         for it, batch_data in enumerate(train_dl):
             
@@ -82,7 +94,7 @@ def do(train_dl, valid_dl, config):
 
             batch_loss.backward()
             optimizer.step()
-            scheduler.step()
+            # scheduler.step()
 
             if (it % config.log_step) == (config.log_step - 1):
                 print(" ")
@@ -91,6 +103,7 @@ def do(train_dl, valid_dl, config):
         
         ep_loss = ep_loss / len(train_dl)
         torch.save(model.state_dict(), config.model_path)
+        
         valid_score, valid_loss = eval(valid_dl, config, model = model)
         print("[EPOCH %d] - TRAINING LOSS: %.5f" % (ep + 1, ep_loss))
         print("\tVALIDATION ACCURACY: %.5f at LOSS: %.5f" % (valid_score, valid_loss))
@@ -107,7 +120,12 @@ def do(train_dl, valid_dl, config):
 
 def eval(test_dl, config, model = None):
     if model is None:
-        model = SiameseConvNet()
+        if config.model == "siamese":
+            model = SiameseConvNet()
+        elif config.model == "siamese_batchnorm":
+            model = SiameseConvNetWithBatchNorm()
+        else:
+            return
         model.load_state_dict(torch.load(config.model_path))
     
     model.eval()
